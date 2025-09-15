@@ -10,7 +10,7 @@ into their hexadecimal representation.
 
 ## Notes
 
-- Aborts conversion if a string exceeds 256 bytes (adjustable through defines)
+- Aborts conversion if a string exceeds 256 bytes leaving the original version (adjustable through defines)
 - Full-line comments are preserved unchanged regardless their content
 
 ## Build
