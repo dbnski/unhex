@@ -183,7 +183,7 @@ int main(void) {
                     putchar(c);
                     break;
                 case QUOTED_STRING:
-                    if (c < 0x20)
+                    if (c < 0x20 || c == 0x7f)
                     {
                         state = BINARY;
                     }
