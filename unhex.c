@@ -20,7 +20,7 @@ void print_binary(const unsigned char *buf, size_t blen)
         switch (c)
         {
             case '\\':
-                if (i == blen) {
+                if (i == blen - 1) {
                     fprintf(stderr, "incomplete escape sequence\n");
                     exit(1);
                 }
