@@ -1,0 +1,10 @@
+01: Tests queries with string argument and query with empty string argument
+02: Tests query with _binary modifier on non-binary string argument
+03: Tests query with _binary modifier on empty string argument
+04: Tests query with _binary modifier on binary string argument
+05: Tests query with [too] long binary string argument
+06: Tests query with a binary string argument (auto-discovery)
+07: Tests query log larger than read buffer size
+08: Tests query with multiple binary strings (auto-discovery) on a single line
+09: Tests full-line comments
+10: Tests string parsing over multiple read buffers

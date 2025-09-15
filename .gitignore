@@ -11,6 +11,7 @@
 !README.md
 !LICENSE
 
+!test/*.txt
 !test/*.sh
 !test/*.in
 !test/*.check
