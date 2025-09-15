@@ -100,9 +100,8 @@ int main(void) {
     unsigned char buf[BUF_SIZE];
     unsigned char bin[BIN_SIZE];
     unsigned char *bptr = NULL;
-    unsigned char prev = 0;
     size_t blen = 0, mlen = 0, n;
-    int in_comment = 0, nl = 1;
+    int in_comment = 0, nl = 1, bs = 0, in_binary = 0;
 
     if (BIN_SIZE >= BUF_SIZE)
     {
@@ -142,6 +141,7 @@ int main(void) {
                         mlen++;
                         if (mlen == sizeof(modifier) - 1)
                         {
+                            in_binary = 1;
                             mlen = 0;
                         }
                         break;
@@ -154,7 +154,8 @@ int main(void) {
 
                     if (c == '\'') // opening quote char
                     {
-                        state = QUOTED_STRING;
+                        state = in_binary ? BINARY : QUOTED_STRING;
+                        in_binary = 0;
                         bptr = buf + i + 1;
                         blen = 0;
                         break;
@@ -166,10 +167,19 @@ int main(void) {
                     }
                     break;
                 case RAW:
-                    if (c == '\'' && prev != '\\')
+                    if (c == '\\')
                     {
-                        state = TEXT;
+                        bs++;
                     }
+                    else
+                    {
+                        if (c == '\'' && bs % 2 == 0)
+                        {
+                            state = TEXT;
+                        }
+                        bs = 0;
+                    }
+
                     putchar(c);
                     break;
                 case QUOTED_STRING:
@@ -179,9 +189,13 @@ int main(void) {
                     }
                     /* fallthrough */
                 case BINARY:
-                    if (c == '\'') // closing quote candidate
+                    if (c == '\\')
                     {
-                        if (prev != '\\') // quote char not escaped
+                        bs++;
+                    }
+                    else
+                    {
+                        if (c == '\'' && bs % 2 == 0)
                         {
                             print(state, bptr, blen);
                             bptr = NULL;
@@ -189,7 +203,9 @@ int main(void) {
                             state = TEXT;
                             break; // we're done in this branch
                         }
+                        bs = 0;
                     }
+
                     blen++;
                     if (blen > BIN_SIZE) // string too long
                     {
@@ -218,8 +234,6 @@ int main(void) {
                     bptr = bin;
                 }
             }
-
-            prev = c;
         }
     }
 
