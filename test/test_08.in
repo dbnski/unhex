@@ -1,0 +1,4 @@
+# Time: 2025-09-15T14:36:30.999999Z
+# User@Host: app_user[app_user] @ localhost []  Id: 104
+# Query_time: 1.111111  Lock_time: 0.000111 Rows_sent: 1  Rows_examined: 1
+SELECT * FROM audit_log WHERE uuid IN ('ß§:/‚€&\0\0\0\0\0\0', 'àR@hÈÄ^€.\0\0\0\0\0\0', 'è5qÂŒ€^\0\0\0\0\0\0', 'éø»˜1-´¹EcÜÅ¥!', 'ëm\"G0š‘™¸h2˜À', 'ìÇ˜ƒC–Ç+3f‹\\\r', 'ìk8sğ«*ñ¾~(T', 'ìkä`éø¦¼*…)øaÍ', 'í)Ø­í°š„Q)·', 'í_›İŸ¨¯®ÍÛ”m;?', 'ïjñ¡:·¤cb¹c¯');
