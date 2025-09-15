@@ -223,6 +223,7 @@ int main(void) {
                             bptr = NULL;
                             blen = 0;
                             in_binary = 0;
+                            bs = 0;
                             break; // we're done in this branch
                         }
                         bs = 0;
