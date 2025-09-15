@@ -1,3 +1,10 @@
+/*
+ * SPDX-License-Identifier: MIT
+ *
+ * Copyright (c) 2025 Maciej Dobrzanski <git@dbnski.com>
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
