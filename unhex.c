@@ -31,6 +31,30 @@ void print_binary(const unsigned char *buf, size_t blen)
                     case '\0':
                         c = buf[++i];
                         break;
+                    case '0':
+                        c = 0x00;
+                        i++;
+                        break;
+                    case 'b':
+                        c = 0x08;
+                        i++;
+                        break;
+                    case 'n':
+                        c = 0x0a;
+                        i++;
+                        break;
+                    case 'r':
+                        c = 0x0d;
+                        i++;
+                        break;
+                    case 't':
+                        c = 0x09;
+                        i++;
+                        break;
+                    case 'Z':
+                        c = 0x1a;
+                        i++;
+                        break;
                     default:
                         fprintf(stderr, "bad sequence: %02x %02x\n", c, buf[i+1]);
                         exit(1);
