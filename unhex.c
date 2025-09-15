@@ -12,6 +12,12 @@ const unsigned char modifier[] = "_binary ";
 
 void print_binary(const unsigned char *buf, size_t blen)
 {
+    if (blen == 0)
+    {
+        printf("''");
+        return;
+    }
+
     printf("0x");
     for (size_t i = 0; i < blen; i++)
     {
@@ -128,6 +134,7 @@ int main(void) {
                     }
 
                     if (in_comment) {
+                        // rewrite as is
                         putchar(c);
                         if (c == '\n') {
                             in_comment = 0;
@@ -136,6 +143,8 @@ int main(void) {
                         break;
                     }
 
+                    // check if _binary modifier is present
+                    // eats the modifier
                     if (c == modifier[mlen])
                     {
                         mlen++;
@@ -146,17 +155,17 @@ int main(void) {
                         }
                         break;
                     }
-                    if (mlen > 0)
+                    if (mlen > 0) // modifier not present
                     {
                         fwrite(modifier, 1, mlen, stdout);
                         mlen = 0;
                     }
 
-                    if (c == '\'') // opening quote char
+                    if (c == '\'') // new string value starts here
                     {
+                        // assume binary if _binary modifier was present
                         state = in_binary ? BINARY : QUOTED_STRING;
-                        in_binary = 0;
-                        bptr = buf + i + 1;
+                        bptr = buf + i + 1; // store the position in read buffer
                         blen = 0;
                         break;
                     }
@@ -183,7 +192,7 @@ int main(void) {
                     putchar(c);
                     break;
                 case QUOTED_STRING:
-                    if (c < 0x20 || c == 0x7f)
+                    if (c < 0x20 || c == 0x7f) // test for non-printable ascii
                     {
                         state = BINARY;
                     }
@@ -197,26 +206,45 @@ int main(void) {
                     {
                         if (c == '\'' && bs % 2 == 0)
                         {
-                            print(state, bptr, blen);
+                            if (blen > 0)
+                            {
+                                print(state, bptr, blen);
+                            }
+                            else
+                            {
+                                /// preserves the original when string is empty
+                                if (in_binary)
+                                {
+                                    fwrite(modifier, 1, sizeof(modifier) - 1, stdout); // recover the modifier
+                                }
+                                printf("''");
+                            }
+                            state = TEXT;
                             bptr = NULL;
                             blen = 0;
-                            state = TEXT;
+                            in_binary = 0;
                             break; // we're done in this branch
                         }
                         bs = 0;
                     }
 
                     blen++;
-                    if (blen > BIN_SIZE) // string too long
+                    // if current string is too long, we will dump it all unchanged
+                    if (blen > BIN_SIZE)
                     {
-                        // dump as is including the leading quote
-                        putchar('\'');
-                        print(RAW, bptr, blen - 1);
+                        state = RAW;
+
+                        if (in_binary)
+                        {
+                            fwrite(modifier, 1, sizeof(modifier) - 1, stdout); // recover the modifier
+                        }
+                        putchar('\''); // recover the opening quote char
+                        print(state, bptr, blen - 1);
                         putchar(c);
 
                         bptr = NULL;
                         blen = 0;
-                        state = RAW;
+                        in_binary = 0;
                     }
                     if (bptr) // is context buffer in use
                     {
@@ -225,7 +253,7 @@ int main(void) {
                     break;
             }
 
-            if (i == n - 1) // end of current read buf
+            if (i == BUF_SIZE - 1) // end of current read buf
             {
                 if (state == QUOTED_STRING || state == BINARY)
                 {
