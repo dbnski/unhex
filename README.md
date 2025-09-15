@@ -1,19 +1,17 @@
 # unhex
 
-A minimal C utility that transforms `_binary '<uuid>'` sequences in input
-streams into their hexadecimal representation. Designed for replacing 
-binary UUIDs embedded in text files, especially in contexts like MySQL
-log rewriting.
+A minimal C utility that transforms binary strings in MySQL log files
+into their hexadecimal representation.
 
 ## Features
 
-- Detects `_binary '<uuid>'` patterns and replaces them with `0x<hex>` format
-- Handles escape sequences (`\\`, `\'`, `\"`, `\0`)
+- Detects `'binstring'` and `_binary 'binstring'` patterns and replaces them with `0x<hex>` format
+- Handles escape sequences (`\\`, `\'`, `\"`, `\0`, etc.)
 
 ## Notes
 
-- Assumes binary UUIDs are exactly 16 bytes
-- Full-line comments are preserved unchanged
+- Aborts conversion if a string exceeds 256 bytes (adjustable through defines)
+- Full-line comments are preserved unchanged regardless their content
 
 ## Build
 
