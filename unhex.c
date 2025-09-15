@@ -20,18 +20,23 @@ void print_binary(const unsigned char *buf, size_t blen)
         switch (c)
         {
             case '\\':
+                if (i == blen) {
+                    fprintf(stderr, "incomplete escape sequence\n");
+                    exit(1);
+                }
                 switch (buf[i+1]) {
                     case '\'':
-                    case '\"':
+                    case '"':
                     case '\\':
                     case '\0':
-                        continue;
+                        c = buf[++i];
+                        break;
                     default:
-                        fprintf(stderr, "bad sequence: %d%d\n", buf[i], buf[i+1]);
+                        fprintf(stderr, "bad sequence: %02x %02x\n", c, buf[i+1]);
                         exit(1);
                 }
         }
-        printf("%02x", buf[i]);
+        printf("%02x", c);
     }
 }
 
@@ -105,7 +110,7 @@ int main(void) {
                             in_comment = 0;
                             nl = 1;
                         }
-                        continue;
+                        break;
                     }
 
                     if (c == modifier[mlen])
@@ -115,7 +120,7 @@ int main(void) {
                         {
                             mlen = 0;
                         }
-                        continue;
+                        break;
                     }
                     if (mlen > 0)
                     {
@@ -128,7 +133,7 @@ int main(void) {
                         state = QUOTED_STRING;
                         bptr = buf + i + 1;
                         blen = 0;
-                        continue;
+                        break;
                     }
 
                     putchar(c);
@@ -158,30 +163,33 @@ int main(void) {
                             bptr = NULL;
                             blen = 0;
                             state = TEXT;
+                            break; // we're done in this branch
                         }
                     }
-                    else
+                    blen++;
+                    if (blen > BIN_SIZE) // string too long
                     {
-                        blen++;
-                        if (blen > BIN_SIZE) // too long
-                        {
-                            // dump as is, including the leading quote
-                            putchar('\'');
-                            print(RAW, bptr, blen - 1);
-                            putchar(c);
+                        // dump as is including the leading quote
+                        putchar('\'');
+                        print(RAW, bptr, blen - 1);
+                        putchar(c);
 
-                            bptr = NULL;
-                            blen = 0;
-                            state = RAW;
-                        }
+                        bptr = NULL;
+                        blen = 0;
+                        state = RAW;
+                    }
+                    if (bptr) // is context buffer in use
+                    {
+                        bptr[blen - 1] = c; // maintain the context buffer
                     }
                     break;
             }
 
-            if (i == n - 1) // end of current buf
+            if (i == n - 1) // end of current read buf
             {
                 if (state == QUOTED_STRING || state == BINARY)
                 {
+                    // use the carry over context buffer
                     memcpy(bin, bptr, blen);
                     bptr = bin;
                 }
