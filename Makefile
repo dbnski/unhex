@@ -4,7 +4,7 @@ TARGET  := unhex
 SRC     := unhex.c
 TESTS   := $(wildcard test/*.in)
 
-.PHONY: all clean
+.PHONY: all test clean
 
 all: $(TARGET)
 
