@@ -8,3 +8,6 @@
 08: Tests query with multiple binary strings (auto-discovery) on a single line
 09: Tests full-line comments
 10: Tests string parsing over multiple read buffers
+11: Tests _binary and binary modifiers
+12: Tests case-insensitive modifier matching
+13: Tests queries where the modifier is attached to characer(s) other than space

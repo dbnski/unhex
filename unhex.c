@@ -5,6 +5,7 @@
  *
  */
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +16,7 @@
 
 enum State { TEXT, QUOTED_STRING, BINARY, RAW };
 
-const unsigned char modifier[] = "_binary ";
+const unsigned char modifier[] = "binary";
 
 void print_binary(const unsigned char *buf, size_t blen)
 {
@@ -114,7 +115,7 @@ int main(void) {
     unsigned char bin[BIN_SIZE];
     unsigned char *bptr = NULL;
     size_t blen = 0, mlen = 0, n;
-    int in_comment = 0, nl = 1, bs = 0, in_binary = 0;
+    int in_comment = 0, nl = 1, bs = 0, in_binary = 0, underscores = 0, whitespace = 0;
 
     if (BIN_SIZE >= BUF_SIZE)
     {
@@ -150,18 +151,66 @@ int main(void) {
                         break;
                     }
 
-                    // check if _binary modifier is present
-                    // eats the modifier
-                    if (c == modifier[mlen])
+                    if (in_binary) {
+                        if (isspace(c))
+                        {
+                            whitespace++;
+                            break;
+                        }
+                        else if (c == '\'') // new string value starts here
+                        {
+                            // assume binary if _binary modifier was present
+                            state = BINARY;
+                            bptr = buf + i + 1; // store the position in read buffer
+                            blen = 0;
+                            break;
+                        }
+                        else
+                        {
+                            if (underscores)
+                            {
+                                putchar('_');
+                                underscores = 0;
+                            }
+                            fwrite(modifier, 1, sizeof(modifier) - 1, stdout); // recover the modifier
+                            in_binary = 0;
+                            for (int n = 0; n < whitespace; n++)
+                            {
+                                putchar(' ');
+                            }
+                            whitespace = 0;
+                        }
+                    }
+
+                    if (c == '_')
+                    {
+                        underscores++;
+                        break;
+                    }
+
+                    if ((c | 0x20) == (modifier[mlen] | 0x20))
                     {
                         mlen++;
                         if (mlen == sizeof(modifier) - 1)
                         {
-                            in_binary = 1;
+                            if (underscores <= 1)
+                            {
+                                in_binary = 1;
+                            }
                             mlen = 0;
                         }
                         break;
                     }
+
+                    if (underscores)
+                    {
+                        for (int n = 0; n < underscores; n++)
+                        {
+                            putchar('_');
+                        }
+                        underscores = 0;
+                    }
+
                     if (mlen > 0) // modifier not present
                     {
                         fwrite(modifier, 1, mlen, stdout);
@@ -170,8 +219,7 @@ int main(void) {
 
                     if (c == '\'') // new string value starts here
                     {
-                        // assume binary if _binary modifier was present
-                        state = in_binary ? BINARY : QUOTED_STRING;
+                        state = QUOTED_STRING;
                         bptr = buf + i + 1; // store the position in read buffer
                         blen = 0;
                         break;
@@ -222,7 +270,15 @@ int main(void) {
                                 /// preserves the original when string is empty
                                 if (in_binary)
                                 {
+                                    if (underscores)
+                                    {
+                                        putchar('_');
+                                    }
                                     fwrite(modifier, 1, sizeof(modifier) - 1, stdout); // recover the modifier
+                                    for (int n = 0; n < whitespace; n++)
+                                    {
+                                        putchar(' ');
+                                    }
                                 }
                                 printf("''");
                             }
@@ -231,6 +287,8 @@ int main(void) {
                             blen = 0;
                             in_binary = 0;
                             bs = 0;
+                            underscores = 0;
+                            whitespace = 0;
                             break; // we're done in this branch
                         }
                         bs = 0;
@@ -244,7 +302,15 @@ int main(void) {
 
                         if (in_binary)
                         {
+                            if (underscores)
+                            {
+                                putchar('_');
+                            }
                             fwrite(modifier, 1, sizeof(modifier) - 1, stdout); // recover the modifier
+                            for (int n = 0; n < whitespace; n++)
+                            {
+                                putchar(' ');
+                            }
                         }
                         putchar('\''); // recover the opening quote char
                         print(state, bptr, blen - 1);
@@ -253,6 +319,8 @@ int main(void) {
                         bptr = NULL;
                         blen = 0;
                         in_binary = 0;
+                        underscores = 0;
+                        whitespace = 0;
                     }
                     if (bptr) // is context buffer in use
                     {
