@@ -18,11 +18,12 @@ enum State { TEXT, QUOTED_STRING, BINARY, RAW };
 
 const unsigned char modifier[] = "binary";
 
-void print_binary(const unsigned char *buf, size_t blen)
+void print_binary(const unsigned char *buf, size_t blen, const unsigned char qchar)
 {
     if (blen == 0)
     {
-        printf("''");
+        putchar(qchar);
+        putchar(qchar);
         return;
     }
 
@@ -78,11 +79,11 @@ void print_binary(const unsigned char *buf, size_t blen)
     }
 }
 
-void print_string(const unsigned char *buf, size_t blen)
+void print_string(const unsigned char *buf, size_t blen, const unsigned char qchar)
 {
-    putchar('\'');
+    putchar(qchar);
     fwrite(buf, 1, blen, stdout);
-    putchar('\'');
+    putchar(qchar);
 }
 
 void print_raw(const unsigned char *buf, size_t blen)
@@ -90,18 +91,18 @@ void print_raw(const unsigned char *buf, size_t blen)
     fwrite(buf, 1, blen, stdout);
 }
 
-void print(enum State mode, const unsigned char *buf, size_t blen)
+void print(enum State mode, const unsigned char *buf, size_t blen, const unsigned char qchar)
 {
     switch (mode)
     {
         case QUOTED_STRING:
-            print_string(buf, blen);
+            print_string(buf, blen, qchar);
             break;
         case RAW:
             print_raw(buf, blen);
             break;
         case BINARY:
-            print_binary(buf, blen);
+            print_binary(buf, blen, qchar);
             break;
         default:
             fprintf(stderr, "unsupported mode: %d\n", mode);
@@ -114,6 +115,7 @@ int main(void) {
     unsigned char buf[BUF_SIZE];
     unsigned char bin[BIN_SIZE];
     unsigned char *bptr = NULL;
+    unsigned char qchar = 0;
     size_t blen = 0, mlen = 0, n;
     int in_comment = 0, nl = 1, bs = 0, in_binary = 0, underscores = 0, whitespace = 0;
 
@@ -151,18 +153,20 @@ int main(void) {
                         break;
                     }
 
-                    if (in_binary) {
+                    // we saw [_]binary modifier or something looking like it 
+                    if (in_binary)
+                    {
                         if (isspace(c))
                         {
                             whitespace++;
                             break;
                         }
-                        else if (c == '\'') // new string value starts here
+                        else if (c == '\'' || c == '"') // starts a string value
                         {
-                            // assume binary if _binary modifier was present
                             state = BINARY;
                             bptr = buf + i + 1; // store the position in read buffer
                             blen = 0;
+                            qchar = c;
                             break;
                         }
                         else
@@ -217,11 +221,12 @@ int main(void) {
                         mlen = 0;
                     }
 
-                    if (c == '\'') // new string value starts here
+                    if (c == '\'' || c == '"') // starts a string value
                     {
                         state = QUOTED_STRING;
                         bptr = buf + i + 1; // store the position in read buffer
                         blen = 0;
+                        qchar = c;
                         break;
                     }
 
@@ -237,8 +242,9 @@ int main(void) {
                     }
                     else
                     {
-                        if (c == '\'' && bs % 2 == 0)
+                        if (c == qchar && bs % 2 == 0)
                         {
+                            qchar = 0;
                             state = TEXT;
                         }
                         bs = 0;
@@ -259,15 +265,15 @@ int main(void) {
                     }
                     else
                     {
-                        if (c == '\'' && bs % 2 == 0)
+                        if (c == qchar && bs % 2 == 0)
                         {
                             if (blen > 0)
                             {
-                                print(state, bptr, blen);
+                                print(state, bptr, blen, qchar);
                             }
                             else
                             {
-                                /// preserves the original when string is empty
+                                // preserves the original when binary string is empty
                                 if (in_binary)
                                 {
                                     if (underscores)
@@ -280,11 +286,13 @@ int main(void) {
                                         putchar(' ');
                                     }
                                 }
-                                printf("''");
+                                putchar(qchar);
+                                putchar(qchar);
                             }
                             state = TEXT;
                             bptr = NULL;
                             blen = 0;
+                            qchar = 0;
                             in_binary = 0;
                             bs = 0;
                             underscores = 0;
@@ -312,8 +320,8 @@ int main(void) {
                                 putchar(' ');
                             }
                         }
-                        putchar('\''); // recover the opening quote char
-                        print(state, bptr, blen - 1);
+                        putchar(qchar); // recover the opening quote char
+                        print(state, bptr, blen - 1, qchar);
                         putchar(c);
 
                         bptr = NULL;
