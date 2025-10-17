@@ -5,7 +5,7 @@ into their hexadecimal representation.
 
 ## Features
 
-- Detects `'binstring'` and `[_]binary 'binstring'` patterns and replaces them with `0x<hex>` format
+- Detects `'binstring'`, `binary 'binstring'`, and `_binary 'binstring'` patterns and replaces them with `0x<hex>` format
 - Handles escape sequences (`\\`, `\'`, `\"`, `\0`, etc.)
 
 ## Notes
